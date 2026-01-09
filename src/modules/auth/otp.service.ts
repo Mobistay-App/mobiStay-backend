@@ -21,12 +21,15 @@ export class OtpService {
         // For now, if phone exists send SMS, else valid email.
 
         const promises = [];
-        if (phone) {
-            promises.push(SmsService.sendOtp(phone, otp));
-        }
+        // Temporarily disabled SMS/WhatsApp until Meta account is ready
+        // if (phone) {
+        //     promises.push(SmsService.sendOtp(phone, otp));
+        // }
         if (email) {
             promises.push(EmailService.sendOtp(email, otp));
         }
+
+        console.info(`🔑 [DEV] OTP generated for ${userId}: ${otp}`);
 
         await Promise.all(promises);
 

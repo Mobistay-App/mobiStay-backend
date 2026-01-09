@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { AuthService } from './auth.service.js';
+import { prisma } from '../../shared/prisma.js';
 import { RegisterSchema, LoginSchema, OtpSchema, ResendOtpSchema } from './auth.schema.js';
 import { z } from 'zod';
 
@@ -20,7 +21,7 @@ export class AuthController {
             // 3. Send Response
             res.status(201).json({
                 success: true,
-                message: "User registered successfully. check your email/phone for OTP.",
+                message: "User registered successfully. Please check your email for the OTP.",
                 data: user
             });
         } catch (error: any) {
@@ -40,16 +41,21 @@ export class AuthController {
      */
     static async verify(req: Request, res: Response): Promise<void> {
         try {
-            const { userId, otp } = OtpSchema.parse(req.body);
+            const { userId: inputUserId, email, otp } = OtpSchema.parse(req.body);
 
-            // We need userId. If not provided in body (maybe user is logged in but unverified?), 
-            // we might get it from token. But for now assuming public verify endpoint with userId/email.
-            // But OtpSchema allows userId OR email.
-            // We need to resolve userId if email is passed.
-            // For simplicity, let's assume the frontend passes userId returned from register.
+            let userId = inputUserId;
+
+            // If userId isn't provided, find it via email
+            if (!userId && email) {
+                const user = await prisma.user.findUnique({ where: { email } });
+                if (!user) {
+                    throw new Error("User with this email not found");
+                }
+                userId = user.id;
+            }
 
             if (!userId) {
-                throw new Error("UserID is required for verification");
+                throw new Error("UserID or Email is required for verification");
             }
 
             const user = await AuthService.verifyUser(userId, otp);

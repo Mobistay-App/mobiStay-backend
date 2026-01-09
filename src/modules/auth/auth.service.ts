@@ -67,12 +67,9 @@ export class AuthService {
             where: { id: userId },
             data: {
                 isVerified: true,
-                idStatus: 'PENDING' // Move to PENDING for admin approval if Driver/Owner, or APPROVED if Traveler?
-                // Spec said: "Redirect to role onboarding".
-                // Let's set verified=true. idStatus defaults to UNVERIFIED.
-                // If Traveler, maybe auto-approve? Let's keep it simple: Verified=true.
+                idStatus: 'APPROVED' // Auto-approve for now as requested
             },
-            select: { id: true, role: true, isVerified: true }
+            select: { id: true, role: true, isVerified: true, idStatus: true }
         });
 
         return user;
