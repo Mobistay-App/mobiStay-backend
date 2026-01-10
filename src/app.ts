@@ -3,6 +3,8 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import authRoutes from './modules/auth/auth.routes.js';
+import userRoutes from './modules/users/user.routes.js';
+import stayRoutes from './modules/stays/stay.routes.js';
 import { setupSwagger } from './config/swagger.js';
 
 const app = express();
@@ -23,6 +25,7 @@ app.get('/', (req, res) => {
 
 // Module Routes
 app.use('/api/auth', authRoutes);
-
+app.use('/api/users', userRoutes);
+app.use('/api/properties', stayRoutes);
 
 export default app;

@@ -49,6 +49,8 @@ model User {
   firstName     String?
   lastName      String?
   avatarUrl     String?
+  bio           String?   @db.VarChar(240)
+  address       String?
   
   // Verification State
   isVerified    Boolean            @default(false)
@@ -60,6 +62,7 @@ model User {
   properties    Property[]         // Properties owned
   bookings      Booking[]          // Stays booked as a traveler
   ridesRequested Ride[]            @relation("PassengerRides")
+  verificationLogs VerificationLog[] // Audit trail
   
   createdAt     DateTime           @default(now())
   updatedAt     DateTime           @updatedAt
@@ -100,6 +103,7 @@ model Property {
   images        String[]  // Array of URLs from UploadThing
   amenities     String[]
   isActive      Boolean   @default(true)
+  blockedDates  DateTime[]
   bookings      Booking[]
   
   createdAt     DateTime  @default(now())
@@ -142,4 +146,17 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+// 8. Audit & Logging
+model VerificationLog {
+  id          String             @id @default(cuid())
+  userId      String
+  user        User               @relation(fields: [userId], references: [id])
+  adminId     String?            // Null if system/auto updated, otherwise ID of Admin
+  previousStatus VerificationStatus
+  newStatus   VerificationStatus
+  reason      String?            // Why was it rejected/approved?
+  
+  createdAt   DateTime           @default(now())
 }
