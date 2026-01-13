@@ -21,7 +21,12 @@ declare global {
  */
 export const authenticate = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const token = req.cookies?.mobistay_token;
+        let token = req.cookies?.mobistay_token;
+
+        // Support Bearer token from headers (common for mobile)
+        if (!token && req.headers.authorization?.startsWith('Bearer ')) {
+            token = req.headers.authorization.split(' ')[1];
+        }
 
         if (!token) {
             res.status(401).json({ success: false, message: 'Authentication required' });
