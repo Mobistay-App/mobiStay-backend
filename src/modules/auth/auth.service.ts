@@ -55,6 +55,7 @@ export class AuthService {
 
     /**
      * Verifies an OTP and updates user status.
+     * Returns full user data + JWT for immediate session.
      */
     static async verifyUser(userId: string, otp: string) {
         const isValid = await OtpService.verifyOtp(userId, otp);
@@ -62,18 +63,37 @@ export class AuthService {
             throw new Error("Invalid or expired OTP");
         }
 
-        // Update User ID Status
+        // Get user to check role
+        const existingUser = await prisma.user.findUnique({ where: { id: userId } });
+        if (!existingUser) {
+            throw new Error("User not found");
+        }
+
+        // Business Logic:
+        // - TRAVELER: Automatically approved (no KYC needed for basic usage)
+        // - DRIVER/OWNER: Stays PENDING until KYC documents are verified by admin
+        const idStatus = existingUser.role === 'TRAVELER' ? 'APPROVED' : 'PENDING';
+
+        // Update User
         const user = await prisma.user.update({
             where: { id: userId },
             data: {
                 isVerified: true,
-                idStatus: 'APPROVED' // Auto-approve for now as requested
+                idStatus
             },
-            select: { id: true, role: true, isVerified: true, idStatus: true }
         });
 
-        return user;
+        // Generate JWT for immediate session
+        const token = await signJWT({
+            userId: user.id,
+            role: user.role,
+            isVerified: user.isVerified
+        });
+
+        const { password: _, ...userWithoutPassword } = user;
+        return { user: userWithoutPassword, token };
     }
+
 
     /**
      * Resends OTP to a user's email/phone.
