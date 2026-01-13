@@ -53,4 +53,17 @@ export class BookingController {
             res.status(400).json({ success: false, message: error.message });
         }
     }
+
+    static async getOwnerStats(req: Request, res: Response): Promise<void> {
+        try {
+            // @ts-ignore
+            const stats = await BookingService.getOwnerStats(req.user.userId);
+            res.status(200).json({
+                success: true,
+                data: stats
+            });
+        } catch (error: any) {
+            res.status(500).json({ success: false, message: error.message });
+        }
+    }
 }

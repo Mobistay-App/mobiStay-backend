@@ -135,4 +135,33 @@ export class BookingService {
             data: { status: data.status }
         });
     }
+
+    /**
+     * Get statistics for owner dashboard
+     */
+    static async getOwnerStats(userId: string) {
+        const bookings = await prisma.booking.findMany({
+            where: {
+                property: { ownerId: userId },
+                status: { in: ['CONFIRMED', 'COMPLETED'] }
+            },
+            select: { totalPrice: true }
+        });
+
+        const totalRevenue = bookings.reduce((sum, b) => sum + b.totalPrice, 0);
+        const bookingCount = await prisma.booking.count({
+            where: { property: { ownerId: userId } }
+        });
+
+        const propertyCount = await prisma.property.count({
+            where: { ownerId: userId, isActive: true }
+        });
+
+        return {
+            totalRevenue,
+            bookingCount,
+            propertyCount,
+            avgRating: 4.8, // Placeholder
+        };
+    }
 }

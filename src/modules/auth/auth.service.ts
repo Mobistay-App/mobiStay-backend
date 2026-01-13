@@ -79,8 +79,13 @@ export class AuthService {
             where: { id: userId },
             data: {
                 isVerified: true,
-                idStatus
+                idStatus,
+                lastLoginAt: new Date()
             },
+            include: {
+                ownerProfile: true,
+                driverProfile: true,
+            }
         });
 
         // Generate JWT for immediate session
@@ -123,7 +128,13 @@ export class AuthService {
         const { email, password } = data;
 
         // 1. Find User
-        const user = await prisma.user.findUnique({ where: { email } });
+        const user = await prisma.user.findUnique({
+            where: { email },
+            include: {
+                ownerProfile: true,
+                driverProfile: true,
+            }
+        });
         if (!user) {
             throw new Error("Invalid credentials");
         }
@@ -134,20 +145,45 @@ export class AuthService {
             throw new Error("Invalid credentials");
         }
 
-        // 3. Check Verification Status
+        // 3. Check Verification Status (First time verification)
         if (!user.isVerified) {
-            // Option: We could trigger a fresh OTP here, but better to let the client request it via /resend
             throw new Error("Account not verified. Please verify your email/phone.");
         }
 
-        // 4. Generate Token
+        // 4. Security: Check for 7-day inactivity
+        const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+        const now = new Date();
+        const lastLogin = user.lastLoginAt ? new Date(user.lastLoginAt) : null;
+
+        if (lastLogin && (now.getTime() - lastLogin.getTime() > SEVEN_DAYS_MS)) {
+            // Trigger OTP
+            await OtpService.sendOtp(user.id, user.email, user.phone);
+            return {
+                requiresOtp: true,
+                userId: user.id,
+                email: user.email,
+                message: "Security check: It's been over 7 days since your last visit. Please verify your OTP."
+            };
+        }
+
+        // 5. Update last Login
+        const updatedUser = await prisma.user.update({
+            where: { id: user.id },
+            data: { lastLoginAt: now },
+            include: {
+                ownerProfile: true,
+                driverProfile: true,
+            }
+        });
+
+        // 6. Generate Token
         const token = await signJWT({
             userId: user.id,
             role: user.role,
             isVerified: user.isVerified
         });
 
-        const { password: _, ...userWithoutPassword } = user;
-        return { user: userWithoutPassword, token };
+        const { password: _, ...userWithoutPassword } = updatedUser;
+        return { user: userWithoutPassword, token, requiresOtp: false };
     }
 }

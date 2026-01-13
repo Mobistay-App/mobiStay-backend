@@ -49,6 +49,7 @@ router.use(authenticate);
  */
 router.post('/', BookingController.create);
 router.get('/', BookingController.list);
+router.get('/stats', BookingController.getOwnerStats);
 
 /**
  * @swagger

@@ -66,6 +66,8 @@ model User {
   
   createdAt     DateTime           @default(now())
   updatedAt     DateTime           @updatedAt
+  lastLoginAt   DateTime?
+
   // Validation & Indexes
   @@index([role])
 }
@@ -77,6 +79,8 @@ model OwnerProfile {
   user              User               @relation(fields: [userId], references: [id])
   ownershipDocUrl   String?            // Title deed/Utility bill
   idCardUrl         String?            // Front of National ID
+  idBackUrl         String?            // Back of National ID
+  selfieWithIdUrl   String?            // User holding their ID
   verificationNote  String?            // Admin feedback
 }
 
@@ -84,9 +88,12 @@ model DriverProfile {
   id                String             @id @default(cuid())
   userId            String             @unique
   user              User               @relation(fields: [userId], references: [id])
-  idCardUrl         String?            // Adding this as per Sprint 1
+  idCardUrl         String?            // Front of National ID
+  idBackUrl         String?            // Back of National ID
+  selfieWithIdUrl   String?            // User holding their ID
   licenseNumber     String             @unique
   licenseImageUrl   String?
+  insuranceDocUrl   String?            // Vehicle insurance
   
   // Vehicle Details (Sprint 3)
   vehicleModel      String?

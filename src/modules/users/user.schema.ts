@@ -15,17 +15,22 @@ export const UpdateProfileSchema = z.object({
  * Schema for Owner document submission (Sprint 1.2)
  */
 export const OwnerDocumentsSchema = z.object({
-    idCardUrl: z.string().url('ID Card must be a valid URL').startsWith('https://'),
-    ownershipDocUrl: z.string().url('Ownership document must be a valid URL').startsWith('https://'),
+    idCardUrl: z.string().url('ID Card front must be a valid URL'),
+    idBackUrl: z.string().url('ID Card back must be a valid URL'),
+    selfieWithIdUrl: z.string().url('Selfie with ID must be a valid URL'),
+    ownershipDocUrl: z.string().url('Ownership document must be a valid URL'),
 });
 
 /**
  * Schema for Driver document submission (Sprint 1.2)
  */
 export const DriverDocumentsSchema = z.object({
-    idCardUrl: z.string().url('ID Card must be a valid URL').startsWith('https://'),
-    licenseImageUrl: z.string().url('License image must be a valid URL').startsWith('https://'),
+    idCardUrl: z.string().url('ID Card front must be a valid URL'),
+    idBackUrl: z.string().url('ID Card back must be a valid URL'),
+    selfieWithIdUrl: z.string().url('Selfie with ID must be a valid URL'),
+    licenseImageUrl: z.string().url('License image must be a valid URL'),
     licenseNumber: z.string().min(5, 'License number too short'),
+    insuranceDocUrl: z.string().url('Insurance document must be a valid URL'),
 });
 
 export type UpdateProfileInput = z.infer<typeof UpdateProfileSchema>;

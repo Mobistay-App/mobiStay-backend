@@ -63,4 +63,43 @@ export class StayController {
             res.status(400).json({ success: false, message: error.message });
         }
     }
+
+    /**
+     * Get owner's listings
+     */
+    static async getMyListings(req: Request, res: Response): Promise<void> {
+        try {
+            if (!req.user) {
+                res.status(401).json({ success: false, message: 'Authentication required' });
+                return;
+            }
+
+            const properties = await StayService.getOwnerProperties(req.user.userId);
+
+            res.status(200).json({
+                success: true,
+                message: 'Listings retrieved successfully',
+                data: properties,
+            });
+        } catch (error: any) {
+            res.status(400).json({ success: false, message: error.message });
+        }
+    }
+
+    /**
+     * List all active properties
+     */
+    static async listProperties(req: Request, res: Response): Promise<void> {
+        try {
+            const { city } = req.query;
+            const properties = await StayService.getAllProperties(city as string);
+
+            res.status(200).json({
+                success: true,
+                data: properties
+            });
+        } catch (error: any) {
+            res.status(500).json({ success: false, message: error.message });
+        }
+    }
 }

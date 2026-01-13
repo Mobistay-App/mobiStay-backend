@@ -14,6 +14,23 @@ const router = Router();
 /**
  * @swagger
  * /api/properties:
+ *   get:
+ *     summary: List all active properties
+ *     tags: [Properties]
+ *     parameters:
+ *       - in: query
+ *         name: city
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: List of properties
+ */
+router.get('/', StayController.listProperties);
+
+/**
+ * @swagger
+ * /api/properties:
  *   post:
  *     summary: Create a new property listing
  *     tags: [Properties]
@@ -58,6 +75,28 @@ router.post(
     requireVerified,
     requireRole('OWNER'),
     StayController.createProperty
+);
+
+/**
+ * @swagger
+ * /api/properties/my-listings:
+ *   get:
+ *     summary: Get current authenticated owner's properties
+ *     tags: [Properties]
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: List of owner properties
+ *       401:
+ *         description: Authentication required
+ */
+router.get(
+    '/my-listings',
+    authenticate,
+    requireVerified,
+    requireRole('OWNER'),
+    StayController.getMyListings
 );
 
 /**

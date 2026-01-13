@@ -21,6 +21,8 @@ export class UserService {
                 isVerified: true,
                 idStatus: true,
                 createdAt: true,
+                ownerProfile: true,
+                driverProfile: true,
             },
         });
 
@@ -64,12 +66,6 @@ export class UserService {
     /**
      * Submit Owner verification documents (Sprint 1.2)
      */
-    /**
-     * Submit Owner verification documents (Sprint 1.2)
-     */
-    /**
-     * Submit Owner verification documents (Sprint 1.2)
-     */
     static async submitOwnerDocuments(userId: string, data: OwnerDocumentsInput) {
         return await prisma.$transaction(async (tx) => {
             // 0. Pre-check: Profile Completeness
@@ -88,10 +84,14 @@ export class UserService {
                 create: {
                     userId,
                     idCardUrl: data.idCardUrl,
+                    idBackUrl: data.idBackUrl,
+                    selfieWithIdUrl: data.selfieWithIdUrl,
                     ownershipDocUrl: data.ownershipDocUrl,
                 },
                 update: {
                     idCardUrl: data.idCardUrl,
+                    idBackUrl: data.idBackUrl,
+                    selfieWithIdUrl: data.selfieWithIdUrl,
                     ownershipDocUrl: data.ownershipDocUrl,
                 },
             });
@@ -120,7 +120,7 @@ export class UserService {
 
             console.info(`📄 [KYC] Owner documents submitted transactionally for user ${userId}`);
             return user;
-        });
+        }, { maxWait: 10000, timeout: 25000 });
     }
 
     /**
@@ -144,13 +144,19 @@ export class UserService {
                 create: {
                     userId,
                     idCardUrl: data.idCardUrl,
+                    idBackUrl: data.idBackUrl,
+                    selfieWithIdUrl: data.selfieWithIdUrl,
                     licenseImageUrl: data.licenseImageUrl,
                     licenseNumber: data.licenseNumber,
+                    insuranceDocUrl: data.insuranceDocUrl,
                 },
                 update: {
                     idCardUrl: data.idCardUrl,
+                    idBackUrl: data.idBackUrl,
+                    selfieWithIdUrl: data.selfieWithIdUrl,
                     licenseImageUrl: data.licenseImageUrl,
                     licenseNumber: data.licenseNumber,
+                    insuranceDocUrl: data.insuranceDocUrl,
                 },
             });
 
@@ -176,6 +182,6 @@ export class UserService {
 
             console.info(`📄 [KYC] Driver documents submitted transactionally for user ${userId}`);
             return user;
-        });
+        }, { maxWait: 10000, timeout: 25000 });
     }
 }

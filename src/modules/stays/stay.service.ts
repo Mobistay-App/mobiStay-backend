@@ -54,4 +54,27 @@ export class StayService {
 
         return updatedProperty;
     }
+
+    /**
+     * Get all properties for an owner
+     */
+    static async getOwnerProperties(ownerId: string) {
+        return await prisma.property.findMany({
+            where: { ownerId },
+            orderBy: { createdAt: 'desc' },
+        });
+    }
+
+    /**
+     * Get all active properties for travelers
+     */
+    static async getAllProperties(city?: string) {
+        return await prisma.property.findMany({
+            where: {
+                isActive: true,
+                ...(city && { city: city as any }),
+            },
+            orderBy: { createdAt: 'desc' },
+        });
+    }
 }
