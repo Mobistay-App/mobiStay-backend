@@ -102,4 +102,48 @@ export class StayController {
             res.status(500).json({ success: false, message: error.message });
         }
     }
+
+    /**
+     * Get a single property
+     */
+    static async getProperty(req: Request, res: Response): Promise<void> {
+        try {
+            const { id } = req.params;
+            const property = await StayService.getPropertyById(id);
+
+            if (!property) {
+                res.status(404).json({ success: false, message: 'Property not found' });
+                return;
+            }
+
+            res.status(200).json({
+                success: true,
+                data: property
+            });
+        } catch (error: any) {
+            res.status(500).json({ success: false, message: error.message });
+        }
+    }
+
+    /**
+     * Delete a property
+     */
+    static async deleteProperty(req: Request, res: Response): Promise<void> {
+        try {
+            if (!req.user) {
+                res.status(401).json({ success: false, message: 'Authentication required' });
+                return;
+            }
+
+            const { id } = req.params;
+            await StayService.deleteProperty(id, req.user.userId);
+
+            res.status(200).json({
+                success: true,
+                message: 'Property deleted successfully'
+            });
+        } catch (error: any) {
+            res.status(400).json({ success: false, message: error.message });
+        }
+    }
 }

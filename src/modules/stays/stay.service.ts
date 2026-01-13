@@ -72,9 +72,60 @@ export class StayService {
         return await prisma.property.findMany({
             where: {
                 isActive: true,
-                ...(city && { city: city as any }),
+                ...(city && { city: { contains: city, mode: 'insensitive' } }),
             },
             orderBy: { createdAt: 'desc' },
+            include: {
+                owner: {
+                    select: {
+                        firstName: true,
+                        lastName: true,
+                        avatarUrl: true,
+                        createdAt: true,
+                    }
+                }
+            }
+        });
+    }
+
+    /**
+     * Get property by ID
+     */
+    static async getPropertyById(id: string) {
+        return await prisma.property.findUnique({
+            where: { id },
+            include: {
+                owner: {
+                    select: {
+                        firstName: true,
+                        lastName: true,
+                        avatarUrl: true,
+                        createdAt: true,
+                    }
+                }
+            }
+        });
+    }
+
+    /**
+     * Delete a property
+     */
+    static async deleteProperty(id: string, ownerId: string) {
+        // Verify ownership first
+        const property = await prisma.property.findUnique({
+            where: { id },
+        });
+
+        if (!property) {
+            throw new Error('Property not found');
+        }
+
+        if (property.ownerId !== ownerId) {
+            throw new Error('Unauthorized: You do not own this property');
+        }
+
+        return await prisma.property.delete({
+            where: { id },
         });
     }
 }

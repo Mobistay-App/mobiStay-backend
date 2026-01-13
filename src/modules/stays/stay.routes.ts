@@ -30,6 +30,26 @@ router.get('/', StayController.listProperties);
 
 /**
  * @swagger
+ * /api/properties/{id}:
+ *   get:
+ *     summary: Get a single property by ID
+ *     tags: [Properties]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Property details
+ *       404:
+ *         description: Property not found
+ */
+router.get('/:id', StayController.getProperty);
+
+/**
+ * @swagger
  * /api/properties:
  *   post:
  *     summary: Create a new property listing
@@ -139,6 +159,34 @@ router.patch(
     requireVerified,
     requireRole('OWNER'),
     StayController.updateAvailability
+);
+
+/**
+ * @swagger
+ * /api/properties/{id}:
+ *   delete:
+ *     summary: Delete a property
+ *     tags: [Properties]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Property deleted successfully
+ *       403:
+ *         description: Unauthorized
+ */
+router.delete(
+    '/:id',
+    authenticate,
+    requireVerified,
+    requireRole('OWNER'),
+    StayController.deleteProperty
 );
 
 export default router;
