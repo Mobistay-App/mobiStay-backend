@@ -32,4 +32,24 @@ export class SmsService {
             console.warn(`[fallback] OTP for ${to}: ${otp}`);
         }
     }
+
+    /**
+     * Send a generic notification SMS.
+     */
+    static async sendNotification(to: string, message: string) {
+        if (!smsClient) {
+            console.warn(`[dev] Mock SMS to ${to}: ${message}`);
+            return;
+        }
+
+        try {
+            await smsClient.send({
+                to: [to],
+                message,
+            });
+            console.log(`📱 SMS sent to ${to}`);
+        } catch (error) {
+            console.error('Failed to send SMS:', error);
+        }
+    }
 }

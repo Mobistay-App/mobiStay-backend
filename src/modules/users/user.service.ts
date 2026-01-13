@@ -64,118 +64,118 @@ export class UserService {
     /**
      * Submit Owner verification documents (Sprint 1.2)
      */
+    /**
+     * Submit Owner verification documents (Sprint 1.2)
+     */
+    /**
+     * Submit Owner verification documents (Sprint 1.2)
+     */
     static async submitOwnerDocuments(userId: string, data: OwnerDocumentsInput) {
-        // Check if owner profile exists
-        const existingProfile = await prisma.ownerProfile.findUnique({
-            where: { userId },
-        });
-
-        if (existingProfile) {
-            // Update existing profile
-            await prisma.ownerProfile.update({
-                where: { userId },
-                data: {
-                    idCardUrl: data.idCardUrl,
-                    businessLicense: data.ownershipDocUrl,
-                },
+        return await prisma.$transaction(async (tx) => {
+            // 0. Pre-check: Profile Completeness
+            const userCheck = await tx.user.findUnique({
+                where: { id: userId },
+                select: { firstName: true, lastName: true, address: true }
             });
-        } else {
-            // Create new profile
-            await prisma.ownerProfile.create({
-                data: {
+
+            if (!userCheck?.firstName || !userCheck?.lastName || !userCheck?.address) {
+                throw new Error('Profile incomplete. Please update your profile (First Name, Last Name, Address) before submitting documents.');
+            }
+
+            // 1. Create or Update Owner Profile using Upsert
+            await tx.ownerProfile.upsert({
+                where: { userId },
+                create: {
                     userId,
                     idCardUrl: data.idCardUrl,
-                    businessLicense: data.ownershipDocUrl,
+                    ownershipDocUrl: data.ownershipDocUrl,
+                },
+                update: {
+                    idCardUrl: data.idCardUrl,
+                    ownershipDocUrl: data.ownershipDocUrl,
                 },
             });
-        }
 
-        // Update user's verification status to PENDING
-        const user = await prisma.user.update({
-            where: { id: userId },
-            data: { idStatus: 'PENDING' },
-            select: {
-                id: true,
-                role: true,
-                idStatus: true,
-                ownerProfile: true,
-            },
+            // 2. Update user's verification status
+            const user = await tx.user.update({
+                where: { id: userId },
+                data: { idStatus: 'PENDING' },
+                select: {
+                    id: true,
+                    role: true,
+                    idStatus: true,
+                    ownerProfile: true,
+                },
+            });
+
+            // 3. Add to audit log
+            await tx.verificationLog.create({
+                data: {
+                    userId,
+                    previousStatus: 'UNVERIFIED',
+                    newStatus: 'PENDING',
+                    reason: 'Owner documents submitted',
+                }
+            });
+
+            console.info(`📄 [KYC] Owner documents submitted transactionally for user ${userId}`);
+            return user;
         });
-
-        // Add to audit log
-        await prisma.verificationLog.create({
-            data: {
-                userId,
-                previousStatus: 'UNVERIFIED', // Assumption: They are submitting for the first time or re-submitting
-                newStatus: 'PENDING',
-                reason: 'Owner documents submitted',
-            }
-        });
-
-        console.info(`📄 [KYC] Owner documents submitted for user ${userId}`);
-        // TODO: Emit Pusher event to Admin Dashboard for "New Verification Pending"
-
-        return user;
     }
 
     /**
      * Submit Driver verification documents (Sprint 1.2)
      */
     static async submitDriverDocuments(userId: string, data: DriverDocumentsInput) {
-        // Check if driver profile exists
-        const existingProfile = await prisma.driverProfile.findUnique({
-            where: { userId },
-        });
+        return await prisma.$transaction(async (tx) => {
+            // 0. Pre-check: Profile Completeness
+            const userCheck = await tx.user.findUnique({
+                where: { id: userId },
+                select: { firstName: true, lastName: true, address: true }
+            });
 
-        if (existingProfile) {
-            // Update existing profile
-            await prisma.driverProfile.update({
+            if (!userCheck?.firstName || !userCheck?.lastName || !userCheck?.address) {
+                throw new Error('Profile incomplete. Please update your profile (First Name, Last Name, Address) before submitting documents.');
+            }
+
+            // 1. Create or Update Driver Profile using Upsert
+            await tx.driverProfile.upsert({
                 where: { userId },
-                data: {
+                create: {
+                    userId,
+                    idCardUrl: data.idCardUrl,
                     licenseImageUrl: data.licenseImageUrl,
                     licenseNumber: data.licenseNumber,
-                    vehicleModel: data.vehicleModel,
-                    vehiclePlate: data.vehiclePlate,
+                },
+                update: {
+                    idCardUrl: data.idCardUrl,
+                    licenseImageUrl: data.licenseImageUrl,
+                    licenseNumber: data.licenseNumber,
                 },
             });
-        } else {
-            // Create new profile
-            await prisma.driverProfile.create({
+
+            const user = await tx.user.update({
+                where: { id: userId },
+                data: { idStatus: 'PENDING' },
+                select: {
+                    id: true,
+                    role: true,
+                    idStatus: true,
+                    driverProfile: true,
+                },
+            });
+
+            await tx.verificationLog.create({
                 data: {
                     userId,
-                    licenseImageUrl: data.licenseImageUrl,
-                    licenseNumber: data.licenseNumber,
-                    vehicleModel: data.vehicleModel,
-                    vehiclePlate: data.vehiclePlate,
-                },
+                    previousStatus: 'UNVERIFIED',
+                    newStatus: 'PENDING',
+                    reason: 'Driver documents submitted',
+                }
             });
-        }
 
-        // Update user's verification status to PENDING
-        const user = await prisma.user.update({
-            where: { id: userId },
-            data: { idStatus: 'PENDING' },
-            select: {
-                id: true,
-                role: true,
-                idStatus: true,
-                driverProfile: true,
-            },
+            console.info(`📄 [KYC] Driver documents submitted transactionally for user ${userId}`);
+            return user;
         });
-
-        // Add to audit log
-        await prisma.verificationLog.create({
-            data: {
-                userId,
-                previousStatus: 'UNVERIFIED',
-                newStatus: 'PENDING',
-                reason: 'Driver documents submitted',
-            }
-        });
-
-        console.info(`📄 [KYC] Driver documents submitted for user ${userId}`);
-        // TODO: Emit Pusher event to Admin Dashboard for "New Verification Pending"
-
-        return user;
     }
 }

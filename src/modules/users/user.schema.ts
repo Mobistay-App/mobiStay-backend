@@ -16,7 +16,7 @@ export const UpdateProfileSchema = z.object({
  */
 export const OwnerDocumentsSchema = z.object({
     idCardUrl: z.string().url('ID Card must be a valid URL').startsWith('https://'),
-    ownershipDocUrl: z.string().url('Ownership document must be a valid URL').startsWith('https://').optional(),
+    ownershipDocUrl: z.string().url('Ownership document must be a valid URL').startsWith('https://'),
 });
 
 /**
@@ -26,8 +26,6 @@ export const DriverDocumentsSchema = z.object({
     idCardUrl: z.string().url('ID Card must be a valid URL').startsWith('https://'),
     licenseImageUrl: z.string().url('License image must be a valid URL').startsWith('https://'),
     licenseNumber: z.string().min(5, 'License number too short'),
-    vehicleModel: z.string().min(2, 'Vehicle model too short'),
-    vehiclePlate: z.string().min(4, 'Vehicle plate too short'),
 });
 
 export type UpdateProfileInput = z.infer<typeof UpdateProfileSchema>;

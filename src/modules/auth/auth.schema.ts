@@ -3,12 +3,11 @@ import { z } from 'zod';
 // Schema for User Registration
 export const RegisterSchema = z.object({
     email: z.string().email("Invalid email format"),
-    // Allowing phone to be optional or string. Add regex for Cameroon numbers if needed (+237...)
-    phone: z.string().min(9, "Phone number is too short").optional(),
     password: z.string().min(8, "Password must be at least 8 characters"),
     role: z.enum(["TRAVELER", "DRIVER", "OWNER"]).default("TRAVELER"),
-    firstName: z.string().min(2, "First name too short").optional(),
-    lastName: z.string().min(2, "Last name too short").optional(),
+    phone: z.string().optional().or(z.literal("")),
+    firstName: z.string().min(2, "First name too short"),
+    lastName: z.string().min(2, "Last name too short"),
 });
 
 // Schema for User Login

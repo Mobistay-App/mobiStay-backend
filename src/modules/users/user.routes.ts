@@ -62,7 +62,7 @@ router.get('/profile', authenticate, UserController.getProfile);
  *       401:
  *         description: Authentication required
  */
-router.patch('/profile', authenticate, requireVerified, UserController.updateProfile);
+router.patch('/profile', authenticate, UserController.updateProfile);
 
 /**
  * @swagger
@@ -117,7 +117,6 @@ router.patch('/profile', authenticate, requireVerified, UserController.updatePro
 router.post(
     '/verify/documents',
     authenticate,
-    requireVerified,
     requireRole('OWNER', 'DRIVER'),
     UserController.submitDocuments
 );

@@ -66,6 +66,8 @@ model User {
   
   createdAt     DateTime           @default(now())
   updatedAt     DateTime           @updatedAt
+  // Validation & Indexes
+  @@index([role])
 }
 
 // 4. Identity & Verification Module
@@ -73,8 +75,8 @@ model OwnerProfile {
   id                String             @id @default(cuid())
   userId            String             @unique
   user              User               @relation(fields: [userId], references: [id])
-  businessLicense   String?            // URL to document
-  idCardUrl         String?            // URL to document
+  ownershipDocUrl   String?            // Title deed/Utility bill
+  idCardUrl         String?            // Front of National ID
   verificationNote  String?            // Admin feedback
 }
 
@@ -82,10 +84,16 @@ model DriverProfile {
   id                String             @id @default(cuid())
   userId            String             @unique
   user              User               @relation(fields: [userId], references: [id])
+  idCardUrl         String?            // Adding this as per Sprint 1
   licenseNumber     String             @unique
-  vehicleModel      String
-  vehiclePlate      String             @unique
   licenseImageUrl   String?
+  
+  // Vehicle Details (Sprint 3)
+  vehicleModel      String?
+  vehiclePlate      String?            @unique
+  vehicleColor      String?
+  vehicleType       String?            // Should be Enum ideally, but String for now as per other fields
+  
   isOnline          Boolean            @default(false)
   rides             Ride[]             @relation("DriverRides")
 }
@@ -108,6 +116,8 @@ model Property {
   
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+
+  @@index([city])
 }
 
 model Booking {
@@ -130,12 +140,17 @@ model Ride {
   passenger     User        @relation("PassengerRides", fields: [passengerId], references: [id])
   driverId      String?
   driver        DriverProfile? @relation("DriverRides", fields: [driverId], references: [id])
-  pickupLocation String
-  dropoffLocation String
-  fare          Float
-  status        RideStatus  @default(REQUESTED)
+  pickupAddress  String
+  pickupLat      Float
+  pickupLng      Float
+  dropoffAddress String
+  dropoffLat     Float
+  dropoffLng     Float
+  fare           Float?      // Nullable until calculated
+  status         RideStatus  @default(REQUESTED)
   
   createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
 }
 
 // 7. Security & Temp Tokens

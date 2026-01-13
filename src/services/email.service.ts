@@ -45,4 +45,26 @@ export class EmailService {
             console.warn(`[fallback] OTP for ${to}: ${otp}`);
         }
     }
+
+    /**
+     * Send a generic notification email.
+     */
+    static async sendNotification(to: string, subject: string, htmlObody: string) {
+        if (!transporter) {
+            console.warn(`[dev] Mock Email to ${to}: Subject: ${subject}`);
+            return;
+        }
+
+        try {
+            await transporter.sendMail({
+                from: `"Mobistay" <${env.SMTP_USER}>`,
+                to,
+                subject,
+                html: htmlObody,
+            });
+            console.log(`✉️ Notification Email sent to ${to}`);
+        } catch (error) {
+            console.error('Failed to send email:', error);
+        }
+    }
 }
