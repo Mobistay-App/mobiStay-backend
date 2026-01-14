@@ -28,9 +28,13 @@ const router = Router();
  *         description: No file uploaded or invalid file type
  */
 router.post('/', authenticate, upload.single('file'), (req: Request, res: Response) => {
-    console.log('Upload request received:', req.file?.originalname);
+    console.log('Upload request headers:', req.headers);
+    console.log('Upload request file:', req.file);
+    console.log('Upload request body:', req.body);
+
     try {
         if (!req.file) {
+            console.error('Multer failed to catch the file. Check field names and Content-Type.');
             res.status(400).json({ success: false, message: 'No file uploaded' });
             return;
         }

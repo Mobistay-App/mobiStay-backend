@@ -7,7 +7,7 @@ export const UpdateProfileSchema = z.object({
     firstName: z.string().min(2, 'First name too short').optional(),
     lastName: z.string().min(2, 'Last name too short').optional(),
     bio: z.string().max(240, 'Bio must be 240 characters or less').optional(),
-    avatarUrl: z.string().url('Avatar must be a valid URL').startsWith('https://', 'Avatar URL must use HTTPS').optional(),
+    avatarUrl: z.string().optional(),
     address: z.string().min(5, 'Address too short').optional(),
 });
 
