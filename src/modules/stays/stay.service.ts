@@ -11,11 +11,14 @@ export class StayService {
                 ownerId,
                 title: data.title,
                 description: data.description,
+                type: data.type,
                 address: data.address,
                 city: data.city,
                 pricePerNight: data.pricePerNight,
                 amenities: data.amenities,
                 images: data.images,
+                latitude: data.latitude,
+                longitude: data.longitude,
                 // Default isActive is true
             },
         });
@@ -68,11 +71,12 @@ export class StayService {
     /**
      * Get all active properties for travelers
      */
-    static async getAllProperties(city?: string) {
+    static async getAllProperties(city?: string, type?: string) {
         return await prisma.property.findMany({
             where: {
                 isActive: true,
                 ...(city && { city: { contains: city, mode: 'insensitive' } }),
+                ...(type && type !== 'ALL' && { type: type as any }),
             },
             orderBy: { createdAt: 'desc' },
             include: {
@@ -104,6 +108,29 @@ export class StayService {
                     }
                 }
             }
+        });
+    }
+
+    /**
+     * Update a property
+     */
+    static async updateProperty(id: string, ownerId: string, data: any) {
+        // Verify ownership first
+        const property = await prisma.property.findUnique({
+            where: { id },
+        });
+
+        if (!property) {
+            throw new Error('Property not found');
+        }
+
+        if (property.ownerId !== ownerId) {
+            throw new Error('Unauthorized: You do not own this property');
+        }
+
+        return await prisma.property.update({
+            where: { id },
+            data,
         });
     }
 

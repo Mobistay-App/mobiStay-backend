@@ -105,6 +105,14 @@ model DriverProfile {
   rides             Ride[]             @relation("DriverRides")
 }
 
+enum PropertyType {
+  APARTMENT
+  STUDIO
+  HOTEL
+  VILLA
+  OTHER
+}
+
 // 5. Stay Module (Guest Houses)
 model Property {
   id            String    @id @default(cuid())
@@ -112,12 +120,15 @@ model Property {
   owner         User      @relation(fields: [ownerId], references: [id])
   title         String
   description   String
+  type          PropertyType @default(APARTMENT)
   address       String
   city          String
   pricePerNight Float
   images        String[]  // Array of URLs from UploadThing
   amenities     String[]
   isActive      Boolean   @default(true)
+  latitude      Float?
+  longitude     Float?
   blockedDates  DateTime[]
   bookings      Booking[]
   
@@ -125,6 +136,7 @@ model Property {
   updatedAt     DateTime  @updatedAt
 
   @@index([city])
+  @@index([type])
 }
 
 model Booking {

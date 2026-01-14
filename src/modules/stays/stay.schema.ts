@@ -3,11 +3,14 @@ import { z } from 'zod';
 export const CreatePropertySchema = z.object({
     title: z.string().min(3, "Title must be at least 3 characters"),
     description: z.string().min(10, "Description must be at least 10 characters"),
+    type: z.enum(['APARTMENT', 'STUDIO', 'HOTEL', 'VILLA', 'OTHER']).default('APARTMENT'),
     address: z.string().min(5, "Address must be at least 5 characters"),
     city: z.string(),
     pricePerNight: z.number().positive("Price must be positive"),
     amenities: z.array(z.string()).min(0),
-    images: z.array(z.string()).min(1, "At least 1 image is required").max(10, "Maximum 10 images allowed")
+    images: z.array(z.string()).min(1, "At least 1 image is required").max(10, "Maximum 10 images allowed"),
+    latitude: z.number().optional(),
+    longitude: z.number().optional(),
 });
 
 export const UpdateAvailabilitySchema = z.object({

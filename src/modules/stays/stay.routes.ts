@@ -30,26 +30,6 @@ router.get('/', StayController.listProperties);
 
 /**
  * @swagger
- * /api/properties/{id}:
- *   get:
- *     summary: Get a single property by ID
- *     tags: [Properties]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Property details
- *       404:
- *         description: Property not found
- */
-router.get('/:id', StayController.getProperty);
-
-/**
- * @swagger
  * /api/properties:
  *   post:
  *     summary: Create a new property listing
@@ -72,7 +52,6 @@ router.get('/:id', StayController.getProperty);
  *                 type: string
  *               city:
  *                 type: string
- *                 enum: [DOUALA, YAOUNDE, BAMENDA, BUEA, LIMBE]
  *               pricePerNight:
  *                 type: number
  *               amenities:
@@ -117,6 +96,34 @@ router.get(
     requireVerified,
     requireRole('OWNER'),
     StayController.getMyListings
+);
+
+/**
+ * @swagger
+ * /api/properties/{id}:
+ *   get:
+ *     summary: Get a single property by ID
+ *     tags: [Properties]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Property details
+ *       404:
+ *         description: Property not found
+ */
+router.get('/:id', StayController.getProperty);
+
+router.put(
+    '/:id',
+    authenticate,
+    requireVerified,
+    requireRole('OWNER'),
+    StayController.updateProperty
 );
 
 /**

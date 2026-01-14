@@ -65,6 +65,29 @@ export class StayController {
     }
 
     /**
+     * Update property details
+     */
+    static async updateProperty(req: Request, res: Response): Promise<void> {
+        try {
+            if (!req.user) {
+                res.status(401).json({ success: false, message: 'Authentication required' });
+                return;
+            }
+
+            const { id } = req.params;
+            const property = await StayService.updateProperty(id, req.user.userId, req.body);
+
+            res.status(200).json({
+                success: true,
+                message: 'Property updated successfully',
+                data: property,
+            });
+        } catch (error: any) {
+            res.status(400).json({ success: false, message: error.message });
+        }
+    }
+
+    /**
      * Get owner's listings
      */
     static async getMyListings(req: Request, res: Response): Promise<void> {
@@ -91,15 +114,15 @@ export class StayController {
      */
     static async listProperties(req: Request, res: Response): Promise<void> {
         try {
-            const { city } = req.query;
-            const properties = await StayService.getAllProperties(city as string);
+            const { city, type } = req.query;
+            const properties = await StayService.getAllProperties(city as string, type as string);
 
             res.status(200).json({
                 success: true,
                 data: properties
             });
         } catch (error: any) {
-            res.status(500).json({ success: false, message: error.message });
+            res.status(400).json({ success: false, message: `Failed to list properties: ${error.message}` });
         }
     }
 
@@ -121,7 +144,7 @@ export class StayController {
                 data: property
             });
         } catch (error: any) {
-            res.status(500).json({ success: false, message: error.message });
+            res.status(400).json({ success: false, message: `Failed to get property: ${error.message}` });
         }
     }
 

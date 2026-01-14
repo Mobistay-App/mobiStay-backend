@@ -22,7 +22,8 @@ export class UserController {
                 data: user,
             });
         } catch (error: any) {
-            res.status(400).json({ success: false, message: error.message });
+            const status = error.message === 'User not found' ? 401 : 400;
+            res.status(status).json({ success: false, message: error.message });
         }
     }
 
