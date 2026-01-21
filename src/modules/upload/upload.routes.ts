@@ -39,17 +39,14 @@ router.post('/', authenticate, upload.single('file'), (req: Request, res: Respon
             return;
         }
 
-        // Construct the file URL
-        // In a real production app, this would be a cloud URL
-        const protocol = req.protocol;
-        const host = req.get('host');
-        const fileUrl = `${protocol}://${host}/uploads/${req.file.filename}`;
+        // Return a relative path so the client can prepend its known IMAGE_BASE_URL
+        const relativePath = `uploads/${req.file.filename}`;
 
         res.status(200).json({
             success: true,
             message: 'File uploaded successfully',
             data: {
-                url: fileUrl,
+                url: relativePath,
                 filename: req.file.filename,
                 mimetype: req.file.mimetype,
                 size: req.file.size

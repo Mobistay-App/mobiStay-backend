@@ -50,6 +50,16 @@ export class BookingService {
         const nights = diffDays > 0 ? diffDays : 1; // Minimum 1 night
         const totalPrice = nights * property.pricePerNight;
 
+        // 3a. Fetch User Details for Payment
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { email: true, firstName: true, lastName: true, phone: true }
+        });
+
+        if (!user || !user.email) {
+            throw new Error('User email is required for payment');
+        }
+
         // 4. Create Booking
         const booking = await prisma.booking.create({
             data: {
@@ -58,11 +68,23 @@ export class BookingService {
                 checkIn: data.checkIn,
                 checkOut: data.checkOut,
                 totalPrice,
-                status: 'PENDING', // Default to PENDING until defined otherwise
+                status: 'PENDING',
             }
         });
 
-        return booking;
+        // 5. Initiate Payment
+        // Import locally to avoid circular deps if any (though Service -> Service is fine usually)
+        const { PaymentService } = await import('../payment/payment.service.js');
+
+        const paymentUrl = await PaymentService.initiatePayment(
+            booking.id,
+            booking.totalPrice,
+            user.email,
+            `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Traveler',
+            user.phone || ''
+        );
+
+        return { booking, paymentUrl };
     }
 
     /**
@@ -83,7 +105,7 @@ export class BookingService {
                         select: { firstName: true, lastName: true, avatarUrl: true }
                     },
                     property: {
-                        select: { title: true, city: true }
+                        select: { title: true, city: true, images: true, type: true }
                     }
                 },
                 orderBy: { checkIn: 'desc' }
@@ -94,7 +116,7 @@ export class BookingService {
                 where: { travelerId: userId },
                 include: {
                     property: {
-                        select: { title: true, city: true, images: true, address: true }
+                        select: { title: true, city: true, images: true, address: true, type: true }
                     }
                 },
                 orderBy: { checkIn: 'desc' }

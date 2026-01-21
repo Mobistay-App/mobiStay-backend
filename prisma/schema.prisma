@@ -1,4 +1,3 @@
-// 1. Setup
 generator client {
   provider = "prisma-client-js"
 }
@@ -7,7 +6,136 @@ datasource db {
   provider = "postgresql"
 }
 
-// 2. Enums (Type Safety for Roles and Statuses)
+model User {
+  id               String             @id @default(cuid())
+  email            String?            @unique
+  phone            String?            @unique
+  password         String
+  role             UserRole           @default(TRAVELER)
+  firstName        String?
+  lastName         String?
+  avatarUrl        String?
+  isVerified       Boolean            @default(false)
+  idStatus         VerificationStatus @default(UNVERIFIED)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  address          String?
+  bio              String?            @db.VarChar(240)
+  lastLoginAt      DateTime?
+  bookings         Booking[]
+  driverProfile    DriverProfile?
+  ownerProfile     OwnerProfile?
+  properties       Property[]
+  ridesRequested   Ride[]             @relation("PassengerRides")
+  verificationLogs VerificationLog[]
+
+  @@index([role])
+}
+
+model OwnerProfile {
+  id               String  @id @default(cuid())
+  userId           String  @unique
+  idCardUrl        String?
+  verificationNote String?
+  ownershipDocUrl  String?
+  idBackUrl        String?
+  selfieWithIdUrl  String?
+  user             User    @relation(fields: [userId], references: [id])
+}
+
+model DriverProfile {
+  id              String  @id @default(cuid())
+  userId          String  @unique
+  licenseNumber   String  @unique
+  vehicleModel    String?
+  vehiclePlate    String? @unique
+  licenseImageUrl String?
+  isOnline        Boolean @default(false)
+  idCardUrl       String?
+  vehicleColor    String?
+  vehicleType     String?
+  idBackUrl       String?
+  insuranceDocUrl String?
+  selfieWithIdUrl String?
+  user            User    @relation(fields: [userId], references: [id])
+  rides           Ride[]  @relation("DriverRides")
+}
+
+model Property {
+  id            String       @id @default(cuid())
+  ownerId       String
+  title         String
+  description   String
+  address       String
+  city          String
+  pricePerNight Float
+  images        String[]
+  amenities     String[]
+  isActive      Boolean      @default(true)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  blockedDates  DateTime[]
+  latitude      Float?
+  longitude     Float?
+  type          PropertyType @default(APARTMENT)
+  bookings      Booking[]
+  owner         User         @relation(fields: [ownerId], references: [id])
+
+  @@index([city])
+  @@index([type])
+}
+
+model Booking {
+  id         String        @id @default(cuid())
+  propertyId String
+  travelerId String
+  checkIn    DateTime
+  checkOut   DateTime
+  totalPrice Float
+  status     BookingStatus @default(PENDING)
+  paymentId  String?       @unique
+  property   Property      @relation(fields: [propertyId], references: [id])
+  traveler   User          @relation(fields: [travelerId], references: [id])
+}
+
+model Ride {
+  id             String         @id @default(cuid())
+  passengerId    String
+  driverId       String?
+  fare           Float?
+  status         RideStatus     @default(REQUESTED)
+  createdAt      DateTime       @default(now())
+  dropoffAddress String
+  dropoffLat     Float
+  dropoffLng     Float
+  pickupAddress  String
+  pickupLat      Float
+  pickupLng      Float
+  updatedAt      DateTime       @updatedAt
+  driver         DriverProfile? @relation("DriverRides", fields: [driverId], references: [id])
+  passenger      User           @relation("PassengerRides", fields: [passengerId], references: [id])
+}
+
+model VerificationToken {
+  id         String   @id @default(cuid())
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model VerificationLog {
+  id             String             @id @default(cuid())
+  userId         String
+  adminId        String?
+  previousStatus VerificationStatus
+  newStatus      VerificationStatus
+  reason         String?
+  createdAt      DateTime           @default(now())
+  user           User               @relation(fields: [userId], references: [id])
+}
+
 enum UserRole {
   TRAVELER
   OWNER
@@ -37,160 +165,10 @@ enum RideStatus {
   CANCELLED
 }
 
-// 3. User & Auth Module
-model User {
-  id            String    @id @default(cuid())
-  email         String?   @unique
-  phone         String?   @unique
-  password      String    // Hashed password
-  role          UserRole  @default(TRAVELER)
-  
-  // Profile Information
-  firstName     String?
-  lastName      String?
-  avatarUrl     String?
-  bio           String?   @db.VarChar(240)
-  address       String?
-  
-  // Verification State
-  isVerified    Boolean            @default(false)
-  idStatus      VerificationStatus @default(UNVERIFIED)
-  
-  // Relations
-  ownerProfile  OwnerProfile?      // One-to-one
-  driverProfile DriverProfile?     // One-to-one
-  properties    Property[]         // Properties owned
-  bookings      Booking[]          // Stays booked as a traveler
-  ridesRequested Ride[]            @relation("PassengerRides")
-  verificationLogs VerificationLog[] // Audit trail
-  
-  createdAt     DateTime           @default(now())
-  updatedAt     DateTime           @updatedAt
-  lastLoginAt   DateTime?
-
-  // Validation & Indexes
-  @@index([role])
-}
-
-// 4. Identity & Verification Module
-model OwnerProfile {
-  id                String             @id @default(cuid())
-  userId            String             @unique
-  user              User               @relation(fields: [userId], references: [id])
-  ownershipDocUrl   String?            // Title deed/Utility bill
-  idCardUrl         String?            // Front of National ID
-  idBackUrl         String?            // Back of National ID
-  selfieWithIdUrl   String?            // User holding their ID
-  verificationNote  String?            // Admin feedback
-}
-
-model DriverProfile {
-  id                String             @id @default(cuid())
-  userId            String             @unique
-  user              User               @relation(fields: [userId], references: [id])
-  idCardUrl         String?            // Front of National ID
-  idBackUrl         String?            // Back of National ID
-  selfieWithIdUrl   String?            // User holding their ID
-  licenseNumber     String             @unique
-  licenseImageUrl   String?
-  insuranceDocUrl   String?            // Vehicle insurance
-  
-  // Vehicle Details (Sprint 3)
-  vehicleModel      String?
-  vehiclePlate      String?            @unique
-  vehicleColor      String?
-  vehicleType       String?            // Should be Enum ideally, but String for now as per other fields
-  
-  isOnline          Boolean            @default(false)
-  rides             Ride[]             @relation("DriverRides")
-}
-
 enum PropertyType {
   APARTMENT
   STUDIO
   HOTEL
   VILLA
   OTHER
-}
-
-// 5. Stay Module (Guest Houses)
-model Property {
-  id            String    @id @default(cuid())
-  ownerId       String
-  owner         User      @relation(fields: [ownerId], references: [id])
-  title         String
-  description   String
-  type          PropertyType @default(APARTMENT)
-  address       String
-  city          String
-  pricePerNight Float
-  images        String[]  // Array of URLs from UploadThing
-  amenities     String[]
-  isActive      Boolean   @default(true)
-  latitude      Float?
-  longitude     Float?
-  blockedDates  DateTime[]
-  bookings      Booking[]
-  
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  @@index([city])
-  @@index([type])
-}
-
-model Booking {
-  id            String        @id @default(cuid())
-  propertyId    String
-  property      Property      @relation(fields: [propertyId], references: [id])
-  travelerId    String
-  traveler      User          @relation(fields: [travelerId], references: [id])
-  checkIn       DateTime
-  checkOut      DateTime
-  totalPrice    Float
-  status        BookingStatus @default(PENDING)
-  paymentId     String?       @unique
-}
-
-// 6. Move Module (Ride Sharing)
-model Ride {
-  id            String      @id @default(cuid())
-  passengerId   String
-  passenger     User        @relation("PassengerRides", fields: [passengerId], references: [id])
-  driverId      String?
-  driver        DriverProfile? @relation("DriverRides", fields: [driverId], references: [id])
-  pickupAddress  String
-  pickupLat      Float
-  pickupLng      Float
-  dropoffAddress String
-  dropoffLat     Float
-  dropoffLng     Float
-  fare           Float?      // Nullable until calculated
-  status         RideStatus  @default(REQUESTED)
-  
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-}
-
-// 7. Security & Temp Tokens
-model VerificationToken {
-  id         String   @id @default(cuid())
-  identifier String   // email or phone
-  token      String   @unique
-  expires    DateTime
-
-  @@unique([identifier, token])
-}
-
-// 8. Audit & Logging
-model VerificationLog {
-  id          String             @id @default(cuid())
-  userId      String
-  user        User               @relation(fields: [userId], references: [id])
-  adminId     String?            // Null if system/auto updated, otherwise ID of Admin
-  previousStatus VerificationStatus
-  newStatus   VerificationStatus
-  reason      String?            // Why was it rejected/approved?
-  
-  createdAt   DateTime           @default(now())
 }

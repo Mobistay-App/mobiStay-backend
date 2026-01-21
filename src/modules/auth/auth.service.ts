@@ -12,12 +12,13 @@ export class AuthService {
      */
     static async register(data: RegisterInput) {
         const { email, password, role, phone, firstName, lastName } = data;
+        const normalizedEmail = email.toLowerCase();
 
         // 1. Check if user already exists
         const existingUser = await prisma.user.findFirst({
             where: {
                 OR: [
-                    { email },
+                    { email: normalizedEmail },
                     { phone: phone || undefined } // Check phone only if provided
                 ]
             }
@@ -33,7 +34,7 @@ export class AuthService {
         // 3. Create User
         const newUser = await prisma.user.create({
             data: {
-                email,
+                email: normalizedEmail,
                 password: hashedPassword,
                 role,
                 phone,
@@ -104,7 +105,12 @@ export class AuthService {
      * Resends OTP to a user's email/phone.
      */
     static async resendOtp(email: string) {
-        const user = await prisma.user.findUnique({ where: { email } });
+        // Case-insensitive search for resend
+        const user = await prisma.user.findFirst({
+            where: {
+                email: { equals: email, mode: 'insensitive' }
+            }
+        });
 
         if (!user) {
             throw new Error("User not found");
@@ -127,27 +133,40 @@ export class AuthService {
     static async login(data: LoginInput) {
         const { email, password } = data;
 
-        // 1. Find User
-        const user = await prisma.user.findUnique({
-            where: { email },
+        // 1. Find User (Case Insensitive)
+        const user = await prisma.user.findFirst({
+            where: {
+                email: { equals: email, mode: 'insensitive' }
+            },
             include: {
                 ownerProfile: true,
                 driverProfile: true,
             }
         });
         if (!user) {
+            console.log(`[AuthService] Login failed: User not found for email '${email}'`);
             throw new Error("Invalid credentials");
         }
 
         // 2. Verify Password
         const isValid = await verifyPassword(password, user.password);
         if (!isValid) {
+            console.log(`[AuthService] Login failed: Invalid password for user '${user.email}'`);
             throw new Error("Invalid credentials");
         }
 
         // 3. Check Verification Status (First time verification)
         if (!user.isVerified) {
-            throw new Error("Account not verified. Please verify your email/phone.");
+            // Trigger a fresh OTP so the user isn't stuck
+            await OtpService.sendOtp(user.id, user.email, user.phone);
+
+            // Return specific structure so client knows to redirect to OTP
+            return {
+                requiresOtp: true,
+                userId: user.id,
+                email: user.email,
+                message: "Account not verified. A new verification code has been sent."
+            };
         }
 
         // 4. Security: Check for 7-day inactivity

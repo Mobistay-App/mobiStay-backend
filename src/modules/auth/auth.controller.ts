@@ -82,6 +82,8 @@ export class AuthController {
             // 1. Validate Input
             const validatedData = LoginSchema.parse(req.body);
 
+            console.log(`[AuthController] Login attempt for: ${validatedData.email}`);
+
             // 2. Call Service
             const result = await AuthService.login(validatedData);
 

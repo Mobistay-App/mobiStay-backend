@@ -104,6 +104,7 @@ interface OwnerProfile {
   verificationNote: string | null;
 }
 ```
+CLIENT_PROPOSAL.md
 
 ### Driver Profile Model
 ```typescript

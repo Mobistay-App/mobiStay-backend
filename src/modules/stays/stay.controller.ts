@@ -115,14 +115,23 @@ export class StayController {
     static async listProperties(req: Request, res: Response): Promise<void> {
         try {
             const { city, type } = req.query;
+            console.log('🔍 Listing properties with filters:', { city, type });
+
             const properties = await StayService.getAllProperties(city as string, type as string);
+            console.log(`🏠 [DB] Found ${properties.length} active properties.`);
 
             res.status(200).json({
                 success: true,
+                count: properties.length,
                 data: properties
             });
         } catch (error: any) {
-            res.status(400).json({ success: false, message: `Failed to list properties: ${error.message}` });
+            console.error('❌ List Stays Error:', error);
+            res.status(400).json({
+                success: false,
+                message: `Failed to list properties: ${error.message || 'Unknown error'}`,
+                error: process.env.NODE_ENV === 'development' ? error.stack : undefined
+            });
         }
     }
 

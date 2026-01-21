@@ -11,6 +11,7 @@ import bookingRoutes from './modules/bookings/booking.routes.js';
 import searchRoutes from './modules/search/search.routes.js';
 import rideRoutes from './modules/rides/ride.routes.js';
 import uploadRoutes from './modules/upload/upload.routes.js';
+import paymentRoutes from './modules/payment/payment.routes.js';
 import { setupSwagger } from './config/swagger.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -19,6 +20,17 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+
+// Basic Request Logging Middleware
+app.use((req, res, next) => {
+    const start = Date.now();
+    console.log(`\n📥 [Incoming] ${req.method} ${req.originalUrl} from ${req.ip}`);
+    res.on('finish', () => {
+        const duration = Date.now() - start;
+        console.log(`📤 [Response] ${req.method} ${req.originalUrl} [${res.statusCode}] - ${duration}ms`);
+    });
+    next();
+});
 
 // Middleware
 app.use(helmet({
@@ -49,5 +61,6 @@ app.use('/api/driver', driverRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/payment', paymentRoutes);
 
 export default app;
